@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerMoving : MonoBehaviour
 {
@@ -13,11 +14,12 @@ public class PlayerMoving : MonoBehaviour
     private Rigidbody2D rb;
     private bool isGrounded;
     private bool isJumped;
+    public bool toJump;
+    public bool toLeft;
+    public bool toRight;
     private bool isDead;
     private bool isBonus;
     private Vector2 startPos;
-    //private Thread task = new Thread(() => Timer(jumpTimer));
-
 
     void Start()
     {
@@ -25,27 +27,28 @@ public class PlayerMoving : MonoBehaviour
         isDead = false;
         isJumped = false;
         isBonus = false;
+        toJump = false;
+        toLeft = false;
+        toRight = false;
         startPos = transform.position;
     }
 
 
-    async void FixedUpdate()
+    void FixedUpdate()
     {
-        if (Input.GetKey(KeyCode.A))
+        if (Input.GetKey(KeyCode.A) || toLeft) 
         {
-            speadX = -acceleration;
+            MoveLeft();
+            toLeft = false;
         }
-        else if (Input.GetKey(KeyCode.D))
+        else if (Input.GetKey(KeyCode.D) || toRight)
         {
-            speadX = +acceleration;
+            MoveRight();
+            toRight = false;
         }
-        if (Input.GetKey(KeyCode.Space) && isGrounded && !isJumped)
+        if (((Input.GetKey(KeyCode.Space) || toJump) && isGrounded && !isJumped))
         {
-            isJumped = true;
-            Debug.Log("Jump");
-            rb.AddForce(new Vector2(0, impulseY * 1000000), ForceMode2D.Impulse);
-            await Timer(jumpTimer);
-            isJumped = false;
+            MoveUp();
         }
         transform.Translate(speadX, 0, 0);
         speadX = 0;
@@ -80,9 +83,38 @@ public class PlayerMoving : MonoBehaviour
             isGrounded = false; Debug.Log("NotFloor"); 
         }
     }
-    private static async Task Timer(int time)
+    public void Timer(int time)
     {
         Debug.Log($"Wait {time * 1000} sec.");
-        await Task.Delay(time);
+        Thread.Sleep(time);
+        isJumped = false;
+        toJump = false;
+    }
+    public void Timer()
+    {
+        int temp = jumpTimer;
+        Debug.Log($"Wait {temp * 1000} sec.");
+        Thread.Sleep(temp);
+        isJumped = false;
+        toJump = false;
+    }
+
+    public void MoveRight()
+    {
+        speadX = +acceleration;
+    }
+
+    public void MoveLeft()
+    {
+        speadX = -acceleration;
+    }
+
+    public void MoveUp()
+    {
+        isJumped = true;
+        Thread thread = new Thread(() => Timer(jumpTimer));
+        Debug.Log("Jump");
+        rb.AddForce(new Vector2(0, impulseY * 1000000), ForceMode2D.Impulse);
+        thread.Start();
     }
 }
